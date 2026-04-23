@@ -1,0 +1,755 @@
+% Two-column research paper, Times font, 10pt, with dedicated cover page
+\documentclass[10pt, a4paper]{article}
+
+% ── Encoding & language ───────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+% ── Fonts (Times New Roman + matching math) ───────────────────────────────────
+\usepackage{mathptmx}
+\usepackage{microtype}
+
+% ── Math ─────────────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, amsthm}
+
+% ── Tables & figures ─────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{array}
+\usepackage{tabularx}
+
+% ── Layout ───────────────────────────────────────────────────────────────────
+\usepackage{geometry}
+\usepackage{multicol}           % for manual two-column body
+\usepackage{balance}            % balance last page columns
+\usepackage{xcolor}
+\usepackage{titlesec}           % section heading style
+\usepackage{abstract}           % abstract styling in one-column mode
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{natbib}
+
+% ── Page geometry ─────────────────────────────────────────────────────────────
+\geometry{
+  a4paper,
+  top    = 2.5cm,
+  bottom = 2.5cm,
+  left   = 1.8cm,
+  right  = 1.8cm,
+  columnsep = 0.6cm
+}
+
+% ── Section heading style (compact, serif) ────────────────────────────────────
+\titleformat{\section}{\normalsize\bfseries\scshape}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{8pt}{4pt}
+\titlespacing*{\subsection}{0pt}{6pt}{3pt}
+
+% ── Abstract styling ─────────────────────────────────────────────────────────
+\setlength{\absleftindent}{0pt}
+\setlength{\absrightindent}{0pt}
+\renewcommand{\abstractnamefont}{\normalsize\bfseries\scshape}
+\renewcommand{\abstracttextfont}{\small}
+
+% ── Hyperref ─────────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=true, linkcolor=blue!60!black,
+            citecolor=blue!60!black, urlcolor=blue!60!black}
+
+% ── Running head ─────────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textit{Omont — Predicting Vote Transfers in the 2024 French Legislative Elections}}
+\fancyhead[R]{\small\thepage}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ══════════════════════════════════════════════════════════════════════════════
+%  COVER PAGE
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{titlepage}
+  \thispagestyle{empty}
+  \centering
+  \vspace*{2cm}
+
+  {\large ETH Zürich \\ Department of Humanities, Social and Political Sciences \\[0.4em]
+   Political Science Seminar --- Spring 2026}
+
+  \vspace{2.5cm}
+
+  \rule{\linewidth}{1pt}\\[0.6em]
+  {\LARGE \bfseries Predicting Vote Transfers in the\\[0.3em]
+   2024 French Legislative Elections:\\[0.4em]
+   A Softmax Model over Ideological Feature Spaces}\\[0.4em]
+  \rule{\linewidth}{1pt}
+
+  \vspace{2cm}
+
+  {\large Emmanuel Omont}\\[0.3em]
+  {\normalsize \texttt{eomont@ethz.ch}}\\[1em]
+  {\normalsize Supervised by Dr.\ Barton Lee}
+
+  \vspace{2cm}
+
+  {\normalsize April 2026}
+
+  \vspace{3cm}
+
+  \begin{minipage}{0.82\linewidth}
+    \small\itshape
+    \textbf{Abstract.}
+    We present a data-driven model for predicting second-round outcomes in French legislative
+    elections by modelling how first-round votes transfer to second-round candidates.
+    Starting from a one-dimensional left--right placement that yields $\sim$75\%
+    constituency-level accuracy, we develop a softmax vote-transfer model grounded in party
+    ideology vectors extracted from the Chapel Hill Expert Survey (CHES) dataset.
+    After dimensionality reduction via PCA retaining 95\% of the variance, parties are
+    embedded in a 15-dimensional ideological space; transfers are proportional to the
+    exponentiated negative ideological distance.  An incumbency bonus further improves
+    predictions.  Parameters are calibrated on the 2017 and 2022 elections and evaluated on
+    2024, for which three ideologically distinct blocs reached the second round simultaneously.
+    The model achieves \textbf{92.06\%} constituency-level accuracy, up from $\sim$75\% for
+    the baseline.  Disaggregating the broad ``Union of the Left'' label into its constituent
+    parties adds a further $\approx$2 percentage points, confirming that intra-coalition
+    heterogeneity is electorally significant.\\[0.5em]
+    \textbf{Keywords:} vote transfer, French elections, ideological distance, softmax,
+    CHES, PCA, incumbency advantage.
+  \end{minipage}
+
+  \vfill
+  \small
+  \textit{Working paper — not for citation without permission.}
+\end{titlepage}
+
+% ══════════════════════════════════════════════════════════════════════════════
+%  TABLE OF CONTENTS  (single column, own page)
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\thispagestyle{empty}
+\tableofcontents
+\newpage
+
+% ══════════════════════════════════════════════════════════════════════════════
+%  BODY  — two columns
+% ══════════════════════════════════════════════════════════════════════════════
+\setlength{\columnsep}{0.6cm}
+\begin{multicols}{2}
+
+% ── 1. Introduction ───────────────────────────────────────────────────────────
+\section{Introduction}
+\label{sec:intro}
+
+The French two-round legislative system produces a distinctive electoral
+dynamic: candidates who exceed a first-round vote threshold advance to a
+second round held two weeks later, and all voters must vote a second time for one of these candidates that passed the first round.
+This \emph{report de voix} is structured by ideological distance between
+parties, yet it is difficult to model precisely: the set of second-round
+candidates varies by constituency, and coalition configurations shift from
+election to election. In past elections, the \emph{front républicain} has been observed multiple times. This is when the voters will vote for someone ideoligicaly very different, to prevent the political parties classified as extreme to come to power. [c.f. election de Chirac en 2002]
+
+In 2024, after the European elections that saw Ensemble, the predential party, arriving 2nd with only 14.6\% of the votes, far behind the Rassemblement National, that had 31.37\%, Emmanuel Macron asked by a "confirmation", by dissolving the assembly, calling for early elections, taking most of the parties by surprise. For the first time in the 5th French Republic, three large and ideologically distinct blocs
+simultaneously reached the second round across a substantial number of
+constituencies:
+\begin{itemize}\setlength\itemsep{2pt}
+  \item the \textbf{Union of the Left (UG)}, a broad coalition spanning La
+        France Insoumise (FI), the Parti Socialiste (PS), Europe \'Ecologie
+        Les Verts (EELV), and the Parti Communiste Français (PCF), united
+        under the Nouveau Front Populaire banner;
+  \item the \textbf{centrist bloc}, centred on Ensemble (ENS) and its allies
+        (MoDem, Horizons);
+  \item the \textbf{far-right bloc}, dominated by the Rassemblement National
+        (RN) and its ally (UXD).
+\end{itemize}
+
+During the compaign, three parties didn't manage to form a coalition, even if they was some discussions: Les Républicains (called LR, classified right), the Rassemblement National (called RN, classified far-right), and Reconquête (called REC, classified far-right). During these discussions, some members of Les Républicains chose to align with the Rassemblement national, creating the Union des Droites (called UXD in data, classified far-right), whereas the rest chose to remain on the same ideology, and align towards the interests of the presidential majority (with Ensemble). 
+
+Because all three blocs were competitive, the direction of transfers,
+particularly from smaller parties such as LR or REC to the big blocks was decisive for dozens of seats.
+The first round results show the far-right block win in amount of votes (33.15\%), 
+and numerous polls for the second round assumed they would get the absolute majority at the assembly, or a large relative majority, because they were in the lead in a large majority of constituency. The exact opposite happened in the second round: the left managed to get a small relative majority, thanks to the report of the votes from the center. 
+
+In this semester project, I would like to know if a mathematical model could predict the result of the second round of the French legislative elections, and predicted the victory, in 2024, of the left.
+
+\paragraph{Contributions.}
+This semester project acts on four contributions.
+First, we propose a \textbf{principled, parameter-efficient model} of vote
+transfer grounded in a multi-dimensional ideological embedding
+(Section~\ref{sec:model}).
+Second, we provide an empirical \textbf{calibration study} across three
+electoral cycles (2017, 2022, 2024), demonstrating cross-election stability
+(Section~\ref{sec:calibration}).
+Third, a \textbf{features disaggregation} analysis, to understand better the difference between the parties, and demonstrate it cannot be resumed to a basic left-right scale (Section~\ref{sec:features-split}).
+Third, a \textbf{coalition disaggregation} experiment shows that resolving
+intra-left heterogeneity improves predictions meaningfully
+(Section~\ref{sec:ug-split}).
+
+% ── 2. Data ───────────────────────────────────────────────────────────────────
+\section{Data}
+\label{sec:data}
+
+\subsection{Electoral Results}
+
+First- and second-round results at the \emph{circonscription} level are
+obtained from the official French Ministry of the Interior open-data portal
+for the 2017, 2022, and 2024 legislative elections.
+Only metropolitan France (mainland and Corsica) is retained; overseas
+constituencies are excluded due to their substantially different political
+dynamics and poor data uniformization. Furthermore, some constituencies got their candidate elected on the first round, so they will not interest us.
+After filtering, 489 constituencies remain for 2024, 534 for
+2022, and 536 for 2017.
+
+Each record contains: constituency code, candidate name, party affiliation
+(\emph{nuance}), first-round vote count, second-round vote count (where
+applicable), and an incumbent indicator (\emph{sortant}).
+
+\subsection{Chapel Hill Expert Survey (CHES)}
+
+Political party positions are drawn from the 1999--2024 Chapel Hill Expert
+Survey dataset \citep{ches2024}.
+CHES collects expert ratings across a wide range of policy dimensions,
+including left--right economic position, social (GAL--TAN) orientation,
+attitudes toward European integration, immigration salience, climate salience,
+internal party dissent, and several other indicators. For 2022 and 2024, I chose to use the data from 2024, even if, for 2022, it is in the future, it made more sense, as the political parties have changed drastically during 2017-2022 (name and program), and are much more consistent in 2022-2024. For 2017, we use the data from 2017.
+
+French party codes are mapped to CHES entries via a hand-crafted
+correspondence table. Most of them are already present in the CHES dataset, but some of them needed special adjustments. You can find these adjustment in the Appendix~\ref{app:party_map}.
+
+To explain the non trivial choices, for the main part of this project, I chose to represent the coalition of the left with the mean of the different parties proposing it, as the parties made an alliance not only on who will run in which constituency, but also presented a commun program, draw from the ideas of all the parties in the alliance. For the center block, I chose to stick to the representation of the different parties, as they did not propose a commun program, but just made an alliance to present one candidate per circonscription to not split the votes between their parties. For the extreme-right alliance (RN and UXD), I just chose to map UXD to the RN, as the two parties were seen as equal by the population.
+
+% ── 3. One-Dimensional Baseline ───────────────────────────────────────────────
+\section{One-Dimensional Baseline}
+\label{sec:baseline}
+
+To first analyze the results, we first embed all parties on a single left--right
+axis, taken from the CHES dataset, in the \emph{lrgen} features, that translate to \emph{left-right general}, ranking the different parties from "left" to "right" ideology. The goal of this first metric is to see how the model would behave in "simple" ways.
+
+You can find in Table~\ref{tab:lrgen-classification} the detail of the classification according to CHES.
+
+
+\begin{table}[H]
+\centering
+\caption{Classification of french parties according to CHES}
+\label{tab:lrgen-classification}
+\scriptsize
+\begin{tabular}{clc}
+\toprule
+Party & lrgen \\
+\midrule
+FI        & 0.82 \\
+PCF       & 1.73 \\
+UG        & 2.00 \\
+LE/EELV   & 2.30 \\
+PS        & 3.45 \\
+MoDem     & 5.36 \\
+Centre    & 5.98 \\
+RE        & 6.27 \\
+Horizons  & 6.60 \\
+LR        & 7.73 \\
+RN        & 8.82 \\
+REC       & 9.73 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We then apply simple vote transfers model to see how the election would behave for "dumb" models. First, without doing any vote reports (so if the candidate leading the first round would be elected), we achieve a very low 64.16\% accuracy, showing there is interest in constructing a vote report model for the second round.
+
+We then construct a simple model with three rules, to redirect the votes:
+
+\begin{itemize}\setlength\itemsep{2pt}
+  \item A non-advancing party's votes are assigned entirely to the
+        ideologically closest second-round candidate.
+  \item If two candidates are equidistant, votes are split equally.
+  \item A advancing party's votes will be assigned entirely to the same party (we assume electors will not change their votes)
+\end{itemize}
+
+Despite its simplicity, this baseline achieves approximately 71.24\%
+constituency-level accuracy on 2024, confirming that ideological proximity
+is a meaningful signal.
+However, 29\% error translates to $\sim$134 mispredicted seats out of the 466 seats we are trying to predict, well above what is useful for electoral forecasting. However, we can see that this simple model predicts 165 seats for the Rassemblement National, even if the party is at an advantage, because he will get all the votes from the center in a dual case between the Union of the Left. 
+
+This is in fact a surprising result, because we see that even in a "favourable" case (not all the voters from the center voted for the RN, in contrary to what this model simulates), the RN would get a short relative majority in the assembly, far away from what some political analysits predicted. Indeed, some analysists predicted that the RN would get an absolute majority (277 seats), when with this analysis, they will get only 201 (they got 36 in the first round).
+
+Two structural limitations motivate the full model:
+
+(i) a single axis cannot capture multi-dimensional ideological distances;
+
+(ii) the hard-assignment rule ignores partial transfers and is sensitive to parties lying almost in the middle;
+
+% ── 4. The Softmax Vote-Transfer Model ────────────────────────────────────────
+\section{The Softmax Model}
+\label{sec:model}
+
+\subsection{Ideological Embedding via PCA}
+\label{sec:pca}
+
+Each French party $p$ is represented by a vector
+$\mathbf{x}_p \in \mathbb{R}^{K}$ built from $K$ CHES features retained
+after dimensionality reduction.
+
+\paragraph{Feature selection.}
+The raw CHES data contains more than 45 numeric indicators. We could use them as such, but some of them are proxy between each others (for example, the features \emph{environment} or \emph{climate change} are very similar). To avoid any overweight toward one specific metric (for example, the position towards the european union can be considered to be in 4 metrics, whereas the one towards economic regulation or deregulation is in 7), To select the important features, we first run an analysis to correlate the values. 
+Then, within each highly-correlated pair (Pearson $r > 0.85$) we drop the feature
+with lower variance.
+The remaining features are standardised and submitted to Principal Component
+Analysis.
+We retain enough components to explain \textbf{95\% of the total variance},
+yielding $K = \mathbf{15}$ dimensions.
+The retained features, ranked by average absolute PCA loading, are listed
+in Table~\ref{tab:pca}.
+
+\begin{table}[H]
+\centering
+\caption{Retained CHES features (PCA-guided selection).}
+\label{tab:pca}
+\scriptsize
+\begin{tabular}{clc}
+\toprule
+\textbf{\#} & \textbf{Feature} & \textbf{Importance} \\
+\midrule
+1  & \texttt{immigrate\_dissent}        & 0.235 \\
+2  & \texttt{anti\_islam\_rhetoric}     & 0.233 \\
+3  & \texttt{galtan\_blur}              & 0.228 \\
+4  & \texttt{lrecon\_blur}              & 0.218 \\
+5  & \texttt{deregulation}              & 0.218 \\
+6  & \texttt{galtan\_dissent}           & 0.217 \\
+7  & \texttt{antielite\_salience}       & 0.216 \\
+8  & \texttt{regions}                   & 0.214 \\
+9  & \texttt{religious\_principles}     & 0.209 \\
+10 & \texttt{eu\_dissent}               & 0.208 \\
+11 & \texttt{eu\_salience}              & 0.201 \\
+12 & \texttt{lrecon\_salience}          & 0.199 \\
+13 & \texttt{climate\_change\_salience} & 0.199 \\
+14 & \texttt{eu\_blur}                  & 0.174 \\
+15 & \texttt{lrecon\_dissent}           & 0.137 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The most discriminating features relate to \emph{internal party dissent}
+(immigration, GAL-TAN, economic), anti-Islam rhetoric, anti-elite salience,
+and regional autonomy -- dimensions on which the three French blocs diverge
+sharply. These different features are the ones that were also highlighted during the political campaign.
+One first observation we can make is that classic left--right economic position (\texttt{lrecon}) does not appear in the top features because its variance is partially captured by the corresponding dissent and salience indicators. 
+
+\subsection{Softmax Vote Transfer}
+\label{sec:softmax}
+
+For transfering the votes, we have seen that a simple \emph{closest gets it all} strategy yields poor results. The initial idea behind this vote transfer is to model a dynamic multi parties transfer from one source. To that, we apply a softmax vote transfer with advantages, which algorithm is described below.
+
+Let constituency $c$ contain a set $\mathcal{R}_c$ of second-round candidates
+and a set $\mathcal{S}_c$ of first-round parties that did \emph{not} advance.
+For each $s \in \mathcal{S}_c$ with first-round total $v_s$, we compute a
+score for each $r \in \mathcal{R}_c$:
+
+\begin{equation}
+  \label{eq:score}
+  \mathrm{score}(s \to r) \;=\;
+    -\delta \cdot \|\mathbf{x}_s - \mathbf{x}_r\|_2 + b_{s \to r},
+\end{equation}
+
+\noindent where $\delta \geq 0$ is a global \emph{distance sensitivity}
+parameter and $b_{s\to r}$ is an incumbency bonus (Section~\ref{sec:bonus}).
+The fraction of $v_s$ transferred to $r$ is:
+
+\begin{equation}
+  \label{eq:softmax}
+  \pi(s \to r) \;=\;
+    \frac{\exp\!\bigl(\mathrm{score}(s \to r)\bigr)}
+         {\displaystyle\sum_{r' \in \mathcal{R}_c}
+          \exp\!\bigl(\mathrm{score}(s \to r')\bigr)}.
+\end{equation}
+
+The predicted second-round total for candidate $r$ is:
+
+\begin{equation}
+  \label{eq:pred}
+  \hat{V}_r \;=\; v_r^{(1)} \;+\;
+    \sum_{s \in \mathcal{S}_c} v_s \cdot \pi(s \to r),
+\end{equation}
+
+\noindent where $v_r^{(1)}$ denotes the first-round votes of $r$ itself
+(assumed fully retained).
+The predicted winner is $\arg\max_r \hat{V}_r$.
+
+A key advantage of the softmax formulation is that it naturally handles
+second rounds with \emph{any} number of candidates (2, 3, 4, or even 5 in
+some constituencies), since the denominator normalises over all options. However, it can be quite challenging to find the correct $\delta$ and $b_{s\to r}$, as changing them by a fraction can result in huge differences in the results. A simple option would be to chose arbitrary numbers, but we proposed a calibration method for these two numbers, based on the results of previous elections (Section~\ref{sec:calibration})
+
+\subsection{Incumbency Bonus}
+\label{sec:bonus}
+
+A sitting MP (\emph{sortant}) who seeks re-election receives an additive bonus, as the french legislative is deeply ancred on the territory, so someone who has already done the job during multiple years will be more likely to have the trust of the people in his constituency):
+
+\begin{equation}
+  \label{eq:bonus}
+  b_{s \to r} =
+  \begin{cases}
+    \delta \cdot c & \text{if } r \text{ is a sortant,} \\
+    0              & \text{otherwise,}
+  \end{cases}
+\end{equation}
+
+\noindent where $c \geq 0$ is the \emph{incumbency coefficient}.
+Scaling the bonus by $\delta$ ensures interpretability: when distance is
+irrelevant ($\delta = 0$), the bonus also vanishes.
+At the optimal parameters ($\delta^*\approx 0.22$,\; $c^*\approx 3.4$),
+the effective advantage is $\delta^* c^* \approx 0.75$ score units.
+
+\subsection{Model Summary}
+
+The complete model has exactly \textbf{two free parameters}:
+
+\begin{center}
+\small
+\begin{tabular}{ccp{3.2cm}}
+\toprule
+Param. & Domain & Interpretation \\
+\midrule
+$\delta$ & $[0,\,0.3]$ & Sensitivity to ideological distance \\
+$c$      & $[0,\,10]$  & Incumbency advantage multiplier \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Both parameters are shared across all parties and constituencies, making the
+model parsimonious and easy to interpret. We could also add more parameters to model more specific events such as an advantage for some candidates coming from the political world (for example, former presidents or well known ministeries), that are most likely to be elected as people "know" them. However, I chose not to do it, as it will imply biased judgement from myself on who to give an advantage to.
+
+% ── 5. Calibration & Validation ───────────────────────────────────────────────
+\section{Calibration and Validation}
+\label{sec:calibration}
+
+\subsection{Grid Search}
+
+We calibrate $(\delta, c)$ by exhaustive grid search over:
+\[
+  \delta \in \{0.000,\,0.001,\,\ldots,\,0.300\},\quad
+  c \in \{0.00,\,0.01,\,\ldots,\,10.00\},
+\]
+yielding more than 300{,}000 candidate pairs.
+For each pair we compute constituency-level accuracy on the combined 2017 and
+2022 calibration sets.
+The grid search is parallelised over CPU cores to reduce wall-clock time.
+
+\subsection{Accuracy Results}
+
+Table~\ref{tab:accuracy} summarises accuracy across electoral cycles.
+
+\begin{table}[H]
+\centering
+\caption{Constituency-level accuracy across elections.}
+\label{tab:accuracy}
+\small
+\begin{tabular}{lccc}
+\toprule
+\textbf{Election} & \textbf{Role} & \textbf{$N$} & \textbf{Acc.\ (\%)} \\
+\midrule
+2017 & Calibration & [replace] & 76.03 \\
+2022 & Calibration & [replace] & 87.08 \\
+2024 & Evaluation  & [replace] & \textbf{92.06} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The optimal parameters from 2017--2022 calibration are
+$\delta^* \in [0.214,\, 0.227]$ and $c^* \in [3.22,\, 3.51]$; multiple
+nearby configurations achieve the same peak accuracy, indicating a flat
+optimum and robustness to small perturbations.
+
+\subsection{Accuracy Landscape}
+
+Figure~\ref{fig:accuracy_matrix} shows the accuracy heat map over the
+$(\delta, c)$ grid evaluated on 2024.
+The optimal region forms a ridge rather than a narrow peak, confirming
+that the calibrated values generalise well out of sample.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/accuracy_matrix.png}
+  \caption{Accuracy heat map over the $(\delta,\,c)$ grid (2024 election).
+  Brighter colours indicate higher accuracy.}
+  \label{fig:accuracy_matrix}
+\end{figure}
+
+\subsection{Per-Party Breakdown (2024)}
+
+Table~\ref{tab:per_party} reports per-party accuracy on the 2024 evaluation
+set using the calibrated parameters.
+
+\begin{table}[H]
+\centering
+\caption{Per-party accuracy, 2024 election.}
+\label{tab:per_party}
+\scriptsize
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Party} & \textbf{Actual} & \textbf{Correct} & \textbf{Acc.\ (\%)} \\
+\midrule
+RN (+ allies)  & 103 & 82  & 79.6  \\
+FI             & 59  & 48  & 81.4  \\
+PS             & 51  & 50  & 98.0  \\
+ENS (+ allies) & 140 & 137 & 97.9  \\
+LR             & 30  & 30  & 100.0 \\
+DVD            & 14  & 14  & 100.0 \\
+HOR            & 5   & 5   & 100.0 \\
+DVC            & 2   & 2   & 100.0 \\
+\midrule
+\textbf{Overall} & [replace] & [replace] & \textbf{92.06} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+Small centrist parties (LR, DVD, HOR, DVC) are predicted with near-perfect
+accuracy because their candidates rarely face ideologically ambiguous transfer
+situations.
+RN and FI are harder to predict ($\sim$80\%), reflecting their position at
+the ideological extremes where transfers are more heterogeneous.
+
+\subsection{Seat Distribution and Aggregate Bias}
+
+Even where the model mispredicts individual constituencies, many errors cancel
+in aggregate: ENS is over-predicted in some seats and under-predicted in
+others, so the total seat count per bloc is more accurate than per-constituency
+accuracy alone would suggest.
+Figure~\ref{fig:seat_distribution} compares predicted and actual seat totals.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/seat_distribution.png}
+  \caption{Predicted vs.\ actual seat totals by bloc (2024). Error bars span
+  the optimal parameter region.}
+  \label{fig:seat_distribution}
+\end{figure}
+
+
+%-- 6. features observation
+\section{Features observation}
+\label{sec:features-split}
+
+\subsection{Motivation}
+
+\subsection{Economics only}
+
+\subsection{Immigration only}
+
+
+
+% ── 6. Disaggregating the Union of the Left ───────────────────────────────────
+\section{Disaggregating the Union of the Left}
+\label{sec:ug-split}
+
+\subsection{Motivation}
+
+In the baseline model, all UG candidates are assigned the same ideological
+vector: the mean of FI, PS, EELV, and PCF.
+This is a simplification.
+A LFI candidate, firmly on the radical left, will attract a very different
+transfer flow from centrist voters than a PS candidate positioned near the
+centre-left.
+Aggregating both under a single UG vector misrepresents this heterogeneity.
+
+\subsection{Implementation}
+
+For 2024, the ``UG'' label on candidate registration forms conceals the actual
+party affiliation.
+We recover individual labels (FI, PS, EELV, PCF) by cross-referencing
+candidate names and constituency codes against scraped HTML data from the
+official results page.
+Each recovered candidate is then assigned the CHES vector of their true party
+rather than the UG mean.
+
+\subsection{Results}
+
+Table~\ref{tab:ug_split} compares accuracy with and without UG
+disaggregation.
+
+\begin{table}[H]
+\centering
+\caption{Effect of UG disaggregation on accuracy (2024).}
+\label{tab:ug_split}
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model variant} & \textbf{Acc.\ (\%)} & \textbf{$\Delta$} \\
+\midrule
+Aggregated UG (mean vector)  & $\approx$90.0 & --- \\
+Disaggregated UG (per-party) & $\approx$92.1 & +2.1 pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The improvement of $\approx$2 pp ($\approx$10 additional constituencies)
+confirms that intra-coalition ideological variance is electorally relevant.
+The model gains most from correctly treating FI candidates as more distant
+from centrist voters than PS candidates, thereby predicting lower centrist-to-left
+transfer in FI-contested seats.
+
+Figure~\ref{fig:ug_split_map} shows the geographic distribution of
+constituencies where disaggregation changes the prediction.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\linewidth]{figures/ug_split_map.png}
+  \caption{Constituencies where UG disaggregation changes the prediction
+  (2024). Blue: corrected; red: degraded; grey: unchanged.}
+  \label{fig:ug_split_map}
+\end{figure}
+
+% ── 7. Discussion ─────────────────────────────────────────────────────────────
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{Strengths.}
+The model is parsimonious (two free parameters), interpretable (distance-based
+transfer with incumbency correction), and transferable across elections.
+Its accuracy improves monotonically from 2017 to 2024, suggesting that the
+political space has become more structured -- or that CHES embeddings become
+more accurate as the French party system crystallises around three blocs.
+
+\paragraph{Static embeddings.}
+Party vectors are fixed at 2024 CHES means even when applied to 2017 and 2022.
+Time-varying embeddings would likely improve calibration, particularly for
+2017 when the party landscape differed substantially (no NFP coalition,
+weaker RN).
+
+\paragraph{Uniform transfer assumption.}
+The model assumes all voters of a party transfer according to the same
+ideological logic.
+In reality, transfers may depend on local factors -- candidate visibility,
+local alliances, urban/rural context -- not captured by national CHES positions.
+
+\paragraph{Abstention heterogeneity.}
+Voters who abstained between rounds are excluded, but abstention is not random:
+it tends to be higher when a voter's first-round choice did not advance.
+A complete model would include an abstention equation.
+
+\paragraph{Coalition coordination.}
+The model does not account for explicit coordination calls (e.g., the NFP's
+official instructions in three-way races).
+Such calls were prominent in 2024 and may have shifted transfers beyond what
+pure ideological distance predicts.
+
+% ── 8. Conclusion ─────────────────────────────────────────────────────────────
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have developed a softmax vote-transfer model for French legislative
+elections grounded in multi-dimensional ideological embeddings from the CHES
+dataset.
+After reducing the 45-feature CHES space to 15 dimensions via PCA (retaining
+95\% of variance), transfers are allocated via an exponential scoring rule
+penalising ideological distance, with an incumbency bonus that preserves
+interpretability.
+
+Calibrated on 2017 and 2022 elections, the model achieves \textbf{92.06\%}
+constituency-level accuracy on 2024 -- up from $\sim$75\% for the
+one-dimensional baseline.
+Resolving the Union of the Left into its constituent parties adds a further
+$\approx$2 pp, demonstrating that intra-coalition heterogeneity is electorally
+significant and worth modelling explicitly.
+
+The model's parsimonious design, strong out-of-sample performance, and clear
+interpretability make it a useful baseline for electoral forecasting and a
+concrete illustration that ideological distance is the dominant driver of
+inter-round vote transfers in French legislative elections.
+
+\balance    % balance final-page columns
+
+\end{multicols}
+
+% ══════════════════════════════════════════════════════════════════════════════
+%  REFERENCES  (single column, own page)
+% ══════════════════════════════════════════════════════════════════════════════
+\newpage
+\bibliographystyle{plainnat}
+\begin{thebibliography}{99}
+
+\bibitem[Jolly et al.(2022)]{ches2024}
+Jolly, S., Bakker, R., Hooghe, L., Marks, G., Polk, J., Rovny, J.,
+Steenbergen, M., \& Vachudova, M.~A. (2022).
+\newblock Chapel Hill Expert Survey Trend File, 1999--2024.
+\newblock \textit{Electoral Studies}, \textit{75}, 102420.
+
+\bibitem[Lewis-Beck \& Skalaban(1992)]{lewis-beck2000}
+Lewis-Beck, M.~S., \& Skalaban, A. (1992).
+\newblock France votes: Party, president, and legislature.
+\newblock \textit{Electoral Studies}, \textit{11}(1), 57--70.
+
+\bibitem[Ministère de l'Intérieur(2024)]{minint2024}
+Ministère de l'Intérieur et des Outre-mer. (2024).
+\newblock \textit{Résultats des élections législatives 2024}.
+
+\end{thebibliography}
+
+% ══════════════════════════════════════════════════════════════════════════════
+%  APPENDICES  (single column)
+% ══════════════════════════════════════════════════════════════════════════════
+\appendix
+
+\section{Party Mapping}
+\label{app:party_map}
+
+\begin{table}[H]
+\centering
+\caption{French electoral nuance codes and CHES mapping.}
+\label{tab:party_map}
+\small
+\begin{tabular}{p{3.5cm} p{3.5cm} p{3.5cm}}
+\toprule
+\textbf{Nuance code(s)} & \textbf{Description} & \textbf{CHES entry} \\
+\midrule
+FI, DXG, EXG, RDG, PCF & Far / radical left & FI, PCF (individual) \\
+NUP, UG, ECO, EELV, DVG, PS & Left / centre-left & PS, EELV (individual) \\
+UDI, DVC, HOZ, HOR, ENS, REG & Centre & Mean(ENS, MoDem, HOR) \\
+LR, DVD & Right & LR \\
+UXD, RN, EXD, REC, DSV & Far right & RN, REC \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Full Accuracy Matrix}
+\label{app:accuracy_matrix}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{figures/accuracy_matrix_full.png}
+  \caption{Full accuracy matrix for the 2024 election over the grid
+  $\delta \in [0,\,0.30]$, $c \in [0,\,10]$.}
+  \label{fig:accuracy_full}
+\end{figure}
+
+\section{Worked Example}
+\label{app:example}
+
+Consider a constituency where the second round opposes ENS and RN, with FI
+and PS having substantial first-round shares.
+With $\delta = 0.22$, $c = 3.4$, and the 15-dimensional CHES vectors:
+
+\begin{align*}
+  \mathrm{score}(\mathrm{FI} \to \mathrm{ENS})
+    &= -0.22 \times \|\mathbf{x}_\mathrm{FI} - \mathbf{x}_\mathrm{ENS}\|_2
+    \approx [\text{replace}], \\
+  \mathrm{score}(\mathrm{FI} \to \mathrm{RN})
+    &= -0.22 \times \|\mathbf{x}_\mathrm{FI} - \mathbf{x}_\mathrm{RN}\|_2
+    \approx [\text{replace}].
+\end{align*}
+
+The softmax assigns, e.g.,
+$\pi(\mathrm{FI} \to \mathrm{ENS}) \approx [\text{replace}]$ and
+$\pi(\mathrm{FI} \to \mathrm{RN}) \approx [\text{replace}]$.
+PS, being closer to ENS in the ideological space, assigns a larger fraction:
+$\pi(\mathrm{PS} \to \mathrm{ENS}) \approx [\text{replace}]$, illustrating
+why disaggregating UG into FI and PS changes predictions in centrist-adjacent
+constituencies.
+
+\end{document}
