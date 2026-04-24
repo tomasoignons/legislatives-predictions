@@ -9,7 +9,7 @@ import seaborn as sns
 # Step 1: Prepare your data (exclude non-numeric columns if any)
 df = pd.read_csv("./data/1999-2024_CHES_dataset_means.csv")
 df = df[df["country"] == 6]
-df = df[df["electionyear"] == 2024]
+df = df[df["electionyear"] == 2017]
 features = df.select_dtypes(include=[np.number])
 
 # Remove columns with NaN values

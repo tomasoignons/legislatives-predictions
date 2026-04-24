@@ -1,0 +1,15 @@
+   1. deregulation
+   2. enviro_salience
+   3. eu_asylum
+   4. eu_blur
+   5. eu_dissent
+   6. eu_salience
+   7. govt
+   8. lrecon_blur
+   9. lrgen
+  10. members_vs_leadership
+  11. multicult_dissent
+  12. people_vs_elite
+  13. protectionism
+  14. regions
+  15. russian_interference
